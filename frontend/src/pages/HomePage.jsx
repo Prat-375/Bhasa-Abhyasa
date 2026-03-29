@@ -1,16 +1,19 @@
+import { useEffect, useState } from "react";
 import LevelCard from "../components/LevelCard";
-import levels from "../data/levels";
 
 function HomePage() {
+  const [levels, setLevels] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/levels")
+      .then((res) => res.json())
+      .then((data) => setLevels(data))
+      .catch((err) => console.error(err));
+  }, []);
+
   return (
-    <section className="hero-section">
-      <div className="hero-copy">
-        <p className="eyebrow">Welcome to Bhasha Abhyasa</p>
-        <h1>Choose your German level</h1>
-        <p className="hero-text">
-          Pick your level and continue with guided learning or targeted practice.
-        </p>
-      </div>
+    <section>
+      <h1>Select your level</h1>
 
       <div className="card-grid">
         {levels.map((level) => (

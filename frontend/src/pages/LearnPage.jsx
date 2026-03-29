@@ -1,36 +1,49 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-
-const themes = [
-  { name: "Greetings", status: "Completed" },
-  { name: "Numbers", status: "In Progress" },
-  { name: "Daily Routine", status: "Locked" },
-  { name: "Travel", status: "Locked" },
-];
 
 function LearnPage() {
   const { level } = useParams();
+  const [themes, setThemes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/themes?level=${level}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setThemes(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching themes:", error);
+        setLoading(false);
+      });
+  }, [level]);
 
   return (
     <section className="content-section">
       <p className="eyebrow">Learn Mode</p>
       <h1>{level} Themes</h1>
       <p className="section-text">
-        Review your learning path and reopen any completed topic anytime.
+        Review your learning path and open any topic you want to study.
       </p>
 
-      <div className="list-block">
-        {themes.map((theme) => (
-          <div key={theme.name} className="list-item">
-            <div>
-              <h3>{theme.name}</h3>
-              <p>Structured lesson for {level} learners.</p>
+      {loading ? (
+        <p>Loading themes...</p>
+      ) : themes.length === 0 ? (
+        <p>No themes found for this level yet.</p>
+      ) : (
+        <div className="list-block">
+          {themes.map((theme) => (
+            <div key={theme._id} className="list-item">
+              <div>
+                <h3>{theme.title}</h3>
+                <p>{theme.description}</p>
+                <p>{theme.category}</p>
+              </div>
             </div>
-            <span className={`status-pill status-${theme.status.toLowerCase().replace(/\s+/g, "-")}`}>
-              {theme.status}
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
