@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
+    password: {
+      type: String,
+      required: true,
+    },
     currentLevel: {
       type: String,
       enum: ["A1", "A2", "B1", "B2", "C1"],

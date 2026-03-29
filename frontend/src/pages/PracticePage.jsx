@@ -1,70 +1,107 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { getUser, getToken } from "../utils/auth";
 
 function PracticePage() {
   const { level } = useParams();
+
   const [questions, setQuestions] = useState([]);
-  const [questionType, setQuestionType] = useState("all");
+  const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState(null);
+
+  const user = getUser();
+  const token = getToken();
 
   useEffect(() => {
-    let url = `http://localhost:5000/api/practice-questions?level=${level}`;
-
-    if (questionType !== "all") {
-      url += `&type=${questionType}`;
-    }
-
-    setLoading(true);
-
-    fetch(url)
+    fetch(`http://localhost:5000/api/practice-questions?level=${level}&type=multiple-choice`)
       .then((res) => res.json())
       .then((data) => {
         setQuestions(data);
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching practice questions:", error);
-        setLoading(false);
       });
-  }, [level, questionType]);
+  }, [level]);
+
+  const handleSelect = (questionId, optionText) => {
+    setAnswers({
+      ...answers,
+      [questionId]: optionText,
+    });
+  };
+
+  const handleSubmit = async () => {
+    let correct = 0;
+
+    questions.forEach((q) => {
+      const correctOption = q.options.find((opt) => opt.isCorrect);
+      if (answers[q._id] === correctOption?.text) {
+        correct++;
+      }
+    });
+
+    const total = questions.length;
+    const score = Math.round((correct / total) * 100);
+
+    setResult({ correct, total, score });
+
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    // 🔥 send to backend
+    await fetch("http://localhost:5000/api/progress/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId: user._id,
+        level,
+        theme: questions[0]?.theme?._id,
+        type: "multiple-choice",
+        totalQuestions: total,
+        correctAnswers: correct,
+      }),
+    });
+  };
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <section className="content-section">
-      <p className="eyebrow">Practice Mode</p>
       <h1>{level} Practice</h1>
-      <p className="section-text">
-        Choose a practice type and work with real questions from the database.
-      </p>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <select
-          value={questionType}
-          onChange={(e) => setQuestionType(e.target.value)}
-          className="filter-select"
-        >
-          <option value="all">All Types</option>
-          <option value="multiple-choice">Multiple Choice</option>
-          <option value="fill-in-the-blank">Fill in the Blank</option>
-          <option value="writing">Writing</option>
-        </select>
-      </div>
+      {questions.map((q) => (
+        <div key={q._id} className="question-card">
+          <h3>{q.questionText}</h3>
 
-      {loading ? (
-        <p>Loading questions...</p>
-      ) : questions.length === 0 ? (
-        <p>No practice questions found for this selection yet.</p>
-      ) : (
-        <div className="list-block">
-          {questions.map((question) => (
-            <div key={question._id} className="list-item">
-              <div>
-                <h3>{question.questionText}</h3>
-                <p>Type: {question.type}</p>
-                {question.theme?.title && <p>Theme: {question.theme.title}</p>}
-                {question.instructions && <p>{question.instructions}</p>}
-              </div>
-            </div>
+          {q.options.map((opt) => (
+            <button
+              key={opt.text}
+              className={`option-btn ${
+                answers[q._id] === opt.text ? "selected" : ""
+              }`}
+              onClick={() => handleSelect(q._id, opt.text)}
+            >
+              {opt.text}
+            </button>
           ))}
+        </div>
+      ))}
+
+      <button className="submit-btn" onClick={handleSubmit}>
+        Submit
+      </button>
+
+      {result && (
+        <div className="result-box">
+          <h2>Result</h2>
+          <p>
+            {result.correct} / {result.total}
+          </p>
+          <p>Score: {result.score}%</p>
         </div>
       )}
     </section>
