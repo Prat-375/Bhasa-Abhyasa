@@ -7,7 +7,9 @@ function HomePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/levels`)
+    const API_URL = import.meta.env.VITE_API_URL || "";
+
+    fetch(`${API_URL}/api/levels`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Failed to fetch levels");
