@@ -14,14 +14,22 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.PRODUCTION_CLIENT_URL,
+  process.env.DOCKER_CLIENT_URL,
+].filter(Boolean);
+
 connectDB();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://bhasha-abhyasa.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
