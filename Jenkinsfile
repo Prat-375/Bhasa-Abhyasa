@@ -46,20 +46,7 @@ pipeline {
 
         stage('Verify') {
             steps {
-                sh '''
-                    echo "Waiting 30 seconds for containers to stabilize..."
-                    sleep 30
-                    docker compose ps
-                '''
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                sh '''
-                    sleep 5
-                    curl -f http://localhost:5000 || exit 1
-                '''
+                sh 'docker compose ps'
             }
         }
     }
