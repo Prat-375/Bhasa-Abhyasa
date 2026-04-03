@@ -10,57 +10,24 @@ pipeline {
 
         stage('Create env file') {
             steps {
-                withCredentials([string(credentialsId: 'backend-env', variable: 'BACKEND_ENV')]) {
+                withCredentials([file(credentialsId: 'backend-env-file', variable: 'ENV_FILE')]) {
                     sh '''
-                        set -e
                         mkdir -p backend
-                        printf "%s" "$BACKEND_ENV" > backend/.env
+                        cp "$ENV_FILE" backend/.env
                         chmod 600 backend/.env
 
-                        echo "Current directory:"
-                        pwd
-
-                        echo "Checking backend folder:"
-                        ls -la backend
-
-                        echo "Confirming .env exists:"
-                        test -f backend/.env && echo ".env created successfully"
+                        grep -q '^MONGO_URI=' backend/.env && echo "MONGO_URI exists" || (echo "MONGO_URI missing" && exit 1)
                     '''
                 }
-            }
-        }
-
-        stage('Check env file') {
-            steps {
-                sh '''
-                    echo "Checking required keys in backend/.env"
-                    grep -q '^MONGO_URI=' backend/.env && echo "MONGO_URI exists" || (echo "MONGO_URI missing" && exit 1)
-                    grep -q '^PORT=' backend/.env && echo "PORT exists" || echo "PORT missing"
-                    echo "Line count in backend/.env:"
-                    wc -l backend/.env
-                '''
             }
         }
 
         stage('Deploy') {
             steps {
                 sh '''
-                    set -e
-                    pwd
-                    ls -la
-                    ls -la backend
                     docker compose down || true
                     docker rm -f ba-backend ba-frontend || true
-                    docker compose up -d --force-recreate
-                '''
-            }
-        }
-
-        stage('Check container env') {
-            steps {
-                sh '''
-                    docker compose ps -a
-                    docker run --rm --env-file backend/.env alpine sh -c 'env | grep "^MONGO_URI=" >/dev/null && echo "MONGO_URI passed correctly" || echo "MONGO_URI not passed"'
+                    docker compose up -d --build --force-recreate
                 '''
             }
         }
@@ -83,8 +50,9 @@ pipeline {
                             break
                         fi
 
-                        if [ "$status" = "unhealthy" ] || [ "$status" = "exited" ] || [ "$status" = "missing" ]; then
+                        if [ "$status" = "unhealthy" ] || [ "$status" = "missing" ]; then
                             echo "Backend failed to start"
+                            docker compose ps -a
                             docker logs ba-backend || true
                             exit 1
                         fi
@@ -102,12 +70,12 @@ pipeline {
                 '''
             }
         }
-        
-        
-        
+
         stage('Verify') {
             steps {
-                sh 'docker compose ps -a'
+                sh '''
+                    docker compose ps -a
+                '''
             }
         }
     }
