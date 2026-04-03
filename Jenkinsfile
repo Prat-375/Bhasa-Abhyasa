@@ -8,15 +8,23 @@ pipeline {
             }
         }
 
-        stage('Build Docker') {
+        stage('Create env file') {
             steps {
-                sh 'docker compose build'
+                withCredentials([string(credentialsId: 'backend-env', variable: 'BACKEND_ENV')]) {
+                    sh '''
+                        mkdir -p backend
+                        printf "%s" "$BACKEND_ENV" > backend/.env
+                        chmod 600 backend/.env
+                    '''
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d --force-recreate'
+                sh '''
+                    docker compose up -d --force-recreate
+                '''
             }
         }
 
