@@ -39,6 +39,10 @@ app.get("/", (req, res) => {
   res.json({ message: "Bhasha Abhyasa API is running" });
 });
 
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/levels", levelRoutes);
@@ -50,5 +54,5 @@ app.use("/api/progress", progressRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`[INFO] Server running on port ${PORT}`);
 });

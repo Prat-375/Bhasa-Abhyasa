@@ -8,19 +8,19 @@ pipeline {
             }
         }
 
-        stage('Build Containers') {
+        stage('Build') {
             steps {
                 sh 'docker compose build'
             }
         }
 
-        stage('Deploy Containers') {
+        stage('Deploy') {
             steps {
                 sh 'docker compose up -d'
             }
         }
 
-        stage('Show Running Containers') {
+        stage('Verify') {
             steps {
                 sh 'docker compose ps'
             }
