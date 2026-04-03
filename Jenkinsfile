@@ -37,6 +37,8 @@ pipeline {
                     pwd
                     ls -la
                     ls -la backend
+                    docker compose down || true
+                    docker rm -f ba-backend ba-frontend || true
                     docker compose up -d --force-recreate
                 '''
             }
