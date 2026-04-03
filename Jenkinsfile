@@ -86,7 +86,7 @@ pipeline {
         
         stage('Verify') {
             steps {
-                sh 'docker compose ps'
+                sh 'docker compose ps -a'
             }
         }
     }
